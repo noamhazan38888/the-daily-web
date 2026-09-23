@@ -1,0 +1,15 @@
+<% const content = article.published; %>
+<%- include('../partials/header', { title: content.title, description: content.summary || content.title }) %>
+<div class="columns">
+  <article class="panel main-column full-article">
+    <a href="/">← חזרה לחדשות</a>
+    <p class="category"><%= content.category %></p>
+    <h1><%= content.title %></h1>
+    <p class="meta">מאת <%= article.reporter?.displayName || article.reporter?.username || 'מערכת האתר' %>
+      <% if (article.publishedAt) { %> · <time datetime="<%= new Date(article.publishedAt).toISOString() %>"><%= formatDate(article.publishedAt) %></time><% } %>
+    </p>
+    <%- include('../partials/content', { content }) %>
+  </article>
+  <%- include('../partials/sidebar') %>
+</div>
+<%- include('../partials/footer') %>

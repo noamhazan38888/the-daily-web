@@ -1,0 +1,38 @@
+<%- include('../partials/header', { title: 'חדשות' }) %>
+<div class="page-heading"><h1>החדשות האחרונות</h1><p class="meta">כתבות ועדכונים מהמערכת</p></div>
+<div class="columns">
+  <section class="main-column" aria-label="פיד חדשות">
+    <form class="panel filters" action="/" method="get" id="feed-filters">
+      <label>חיפוש כתבות<input type="search" name="search" value="<%= filters.search %>" placeholder="חיפוש לפי כותרת"></label>
+      <label>קטגוריה<input name="category" value="<%= filters.category %>" placeholder="כל הקטגוריות"></label>
+      <label>מיון<select name="sort"><option value="">החדשות ביותר</option><option value="popular" <%= filters.sort === 'popular' ? 'selected' : '' %>>הנצפות ביותר</option></select></label>
+      <button type="submit">חיפוש</button><a href="/">איפוס</a>
+    </form>
+    <p class="meta"><%= total %> כתבות נמצאו</p>
+    <div id="article-feed" data-page="<%= page %>" data-has-more="<%= hasMore %>" data-api-url="/api/public/articles">
+      <% articles.forEach((article) => { const content = article.published; if (!content) return; %>
+        <article class="panel article-card" data-article-id="<%= article._id %>">
+          <% if (imageSource(content.imageUrl)) { %><img src="<%= imageSource(content.imageUrl) %>" alt="<%= content.title %>" loading="lazy"><% } %>
+          <div class="card-content">
+            <p class="category"><%= content.category %></p>
+            <h2><a href="/articles/<%= article._id %>"><%= content.title %></a></h2>
+            <p><%= content.summary %></p>
+            <p class="meta"><%= article.reporter?.displayName || article.reporter?.username || 'מערכת האתר' %>
+              <% if (article.publishedAt) { %> · <time datetime="<%= new Date(article.publishedAt).toISOString() %>"><%= formatDate(article.publishedAt) %></time><% } %>
+            </p>
+            <a href="/articles/<%= article._id %>" aria-label="לכתבה המלאה: <%= content.title %>">לכתבה המלאה ←</a>
+          </div>
+        </article>
+      <% }); %>
+      <% if (!articles.length) { %><p class="panel">לא נמצאו כתבות. נסו לשנות את החיפוש או לחזור מאוחר יותר.</p><% } %>
+    </div>
+    <nav class="pagination" aria-label="עמודי חדשות" id="feed-pagination">
+      <% const query = new URLSearchParams({ ...filters, limit: String(limit) }); %>
+      <% if (page > 1) { query.set('page', String(page - 1)); %><a class="button button-secondary" href="/?<%= query.toString() %>">הקודם</a><% } %>
+      <span>עמוד <%= page %></span>
+      <% if (hasMore) { query.set('page', String(page + 1)); %><a class="button button-secondary" rel="next" href="/?<%= query.toString() %>">הבא</a><% } %>
+    </nav>
+  </section>
+  <%- include('../partials/sidebar') %>
+</div>
+<%- include('../partials/footer') %>

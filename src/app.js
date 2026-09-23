@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { createSessionMiddleware } from './config/session.js';
 import authRoutes from './routes/authRoutes.js';
 import publicRoutes from './routes/publicRoutes.js';
+import pageRoutes from './routes/pageRoutes.js';
 import reporterRoutes from './routes/reporterRoutes.js';
 import editorRoutes from './routes/editorRoutes.js';
 import userRoutes from './routes/userRoutes.js';
@@ -33,6 +34,8 @@ export function createApp() {
   app.use('/api/reporter', reporterRoutes);
   app.use('/api/editor', editorRoutes);
   app.use('/api/users', userRoutes);
+
+  app.use('/', pageRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
