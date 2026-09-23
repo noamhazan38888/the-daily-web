@@ -1,0 +1,21 @@
+<%- include('../partials/header', { title: article ? 'עריכת כתבה' : 'כתבה חדשה' }) %>
+<a href="/reporter">← חזרה לכתבות שלי</a>
+<section class="panel form-panel">
+  <h1><%= article ? 'עריכת כתבה' : 'כתבה חדשה' %></h1>
+  <% if (article) { %><p class="status"><%= statusLabels[article.status] %></p><% } %>
+  <% if (article?.reviewNote) { %><p class="notice">הערת העורך: <%= article.reviewNote %></p><% } %>
+  <% if (article?.published) { %><p class="notice">שמירת עדכון עשויה להסיר זמנית את הכתבה מהאתר עד לאישור העורך, בהתאם לתהליך הקיים.</p><% } %>
+  <p class="meta">ניתן לשמור את הכתבה. שליחה לאישור עדיין אינה זמינה במערכת.</p>
+  <noscript><p class="notice">שמירת כתבות דורשת הפעלת JavaScript בדפדפן.</p></noscript>
+  <form class="stack-form" action="/api/reporter/articles<%= article ? '/' + article._id : '' %>" method="post" data-api-form data-method="<%= article ? 'PATCH' : 'POST' %>" data-redirect="/reporter">
+    <%- include('../partials/article-fields', { content: article?.draft || {} }) %>
+    <div class="actions"><button type="submit">שמירת כתבה</button><a href="/reporter">ביטול</a></div>
+    <p class="form-message" role="status"></p>
+  </form>
+  <% if (article && article.status !== 'published') { %>
+    <form class="delete-form" action="/api/reporter/articles/<%= article._id %>" method="post" data-api-form data-method="DELETE" data-redirect="/reporter" data-confirm="למחוק את הכתבה וכל הגרסאות השמורות שלה? לא ניתן לבטל פעולה זו.">
+      <button class="button-danger" type="submit">מחיקת כתבה</button><p class="form-message" role="status"></p>
+    </form>
+  <% } %>
+</section>
+<%- include('../partials/footer') %>

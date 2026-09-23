@@ -1,11 +1,23 @@
 import { Router } from 'express';
 import { listPublishedArticles, getPublishedArticle } from '../controllers/publicController.js';
-import { publicPage } from '../controllers/pageController.js';
+import { preparePage, requirePageRole } from '../controllers/pageController.js';
+import { showLogin } from '../controllers/authController.js';
+import { listReporterArticles, getReporterArticle } from '../controllers/reporterController.js';
+import { listArticles, getArticle } from '../controllers/editorController.js';
 
 const router = Router();
 
-router.get('/', publicPage, listPublishedArticles);
-router.get('/articles/:id', publicPage, getPublishedArticle);
+router.get('/', preparePage, listPublishedArticles);
+router.get('/articles/:id', preparePage, getPublishedArticle);
+
+router.get('/login', preparePage, showLogin);
+router.get('/reporter', preparePage, requirePageRole('reporter'), listReporterArticles);
+router.get('/reporter/articles/new', preparePage, requirePageRole('reporter'), (req, res) => {
+  res.render('pages/reporter-form', { article: null });
+});
+router.get('/reporter/articles/:id', preparePage, requirePageRole('reporter'), getReporterArticle);
+router.get('/editor', preparePage, requirePageRole('editor'), listArticles);
+router.get('/editor/articles/:id', preparePage, requirePageRole('editor'), getArticle);
 
 router.use((error, req, res, next) => {
   if (!res.locals.pageView || res.headersSent) return next(error);

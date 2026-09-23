@@ -1,6 +1,11 @@
-export function publicPage(req, res, next) {
+export function preparePage(req, res, next) {
   // Only page routes set this flag; the existing API routes continue returning JSON.
   res.locals.pageView = true;
+  res.locals.user = req.session?.user ?? null;
+  res.locals.statusLabels = {
+    draft: 'טיוטה', pending_review: 'ממתינה לאישור',
+    published: 'פורסמה', changes_requested: 'נדרשים תיקונים'
+  };
   res.locals.title = 'The Daily Web';
   res.locals.description = 'החדשות והכתבות של The Daily Web';
   res.locals.filters = {
@@ -16,4 +21,16 @@ export function publicPage(req, res, next) {
     return /^https?:\/\//i.test(value) || /^\/(?!\/)/.test(value) ? value : '';
   };
   next();
+}
+
+export function requirePageRole(role) {
+  return (req, res, next) => {
+    if (!req.session.user) return res.redirect('/login');
+    if (req.session.user.role !== role) {
+      return res.status(403).render('pages/error', {
+        title: 'אין הרשאה', message: 'אין לך הרשאה לצפות בעמוד הזה.'
+      });
+    }
+    next();
+  };
 }
