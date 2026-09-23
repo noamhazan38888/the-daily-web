@@ -409,3 +409,10 @@ label {
     width: 100%;
   }
 }
+
+/* Sidebar weather */
+.temperature {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-block: 8px;
+}

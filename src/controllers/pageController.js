@@ -1,3 +1,5 @@
+import { getWeather } from '../services/weather.js';
+
 export function preparePage(req, res, next) {
   // Only page routes set this flag; the existing API routes continue returning JSON.
   res.locals.pageView = true;
@@ -33,4 +35,9 @@ export function requirePageRole(role) {
     }
     next();
   };
+}
+
+export async function loadWeather(req, res, next) {
+  res.locals.weather = await getWeather();
+  next();
 }

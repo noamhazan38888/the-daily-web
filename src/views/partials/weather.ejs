@@ -1,0 +1,14 @@
+<section class="panel weather" aria-labelledby="weather-title" data-weather-expires="<%= weather ? new Date(Math.min(weather.fetchedAt, weather.observedAt) + 15 * 60 * 1000).toISOString() : '' %>">
+  <h2 id="weather-title">מזג האוויר</h2>
+  <% if (weather) { %>
+    <div data-weather-content>
+      <p><%= weather.location %></p>
+      <p class="temperature"><bdi><%= weather.temperature %>°C</bdi></p>
+      <p><%= weather.description %></p>
+      <p class="meta">זמן הנתונים: <time datetime="<%= new Date(weather.observedAt).toISOString() %>"><%= formatDate(weather.observedAt) %></time></p>
+    </div>
+  <% } %>
+  <p data-weather-unavailable <%= weather ? 'hidden' : '' %>>מזג האוויר אינו זמין כרגע.</p>
+  <a class="meta" href="https://open-meteo.com/">נתוני מזג אוויר: Open-Meteo</a>
+</section>
+<script src="/js/weather.js" defer></script>

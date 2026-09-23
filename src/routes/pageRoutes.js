@@ -1,14 +1,14 @@
 import { Router } from 'express';
 import { listPublishedArticles, getPublishedArticle } from '../controllers/publicController.js';
-import { preparePage, requirePageRole } from '../controllers/pageController.js';
+import { preparePage, requirePageRole, loadWeather } from '../controllers/pageController.js';
 import { showLogin } from '../controllers/authController.js';
 import { listReporterArticles, getReporterArticle } from '../controllers/reporterController.js';
 import { listArticles, getArticle } from '../controllers/editorController.js';
 
 const router = Router();
 
-router.get('/', preparePage, listPublishedArticles);
-router.get('/articles/:id', preparePage, getPublishedArticle);
+router.get('/', preparePage, loadWeather, listPublishedArticles);
+router.get('/articles/:id', preparePage, loadWeather, getPublishedArticle);
 
 router.get('/login', preparePage, showLogin);
 router.get('/reporter', preparePage, requirePageRole('reporter'), listReporterArticles);
