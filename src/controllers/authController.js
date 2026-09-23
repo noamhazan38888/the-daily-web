@@ -29,7 +29,7 @@ export async function login(req, res) {
   req.session.user = user.toSafeObject();
 
   if (req.accepts('html')) {
-    return res.redirect('/api/auth/me');
+    return res.redirect(req.session.user.role === 'editor' ? '/editor' : '/reporter');
   }
 
   res.json({ user: req.session.user });

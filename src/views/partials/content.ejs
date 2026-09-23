@@ -1,0 +1,9 @@
+<% if (imageSource(content.imageUrl)) { %>
+  <img class="article-image" src="<%= imageSource(content.imageUrl) %>" alt="<%= content.title %>">
+<% } %>
+<p class="article-summary"><%= content.summary %></p>
+<div class="article-body">
+  <% content.body.split(/\r?\n\s*\r?\n/).forEach((paragraph) => { %>
+    <p><%= paragraph %></p>
+  <% }); %>
+</div>
