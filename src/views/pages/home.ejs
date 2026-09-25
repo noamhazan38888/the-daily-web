@@ -8,7 +8,7 @@
       <label>מיון<select name="sort"><option value="">החדשות ביותר</option><option value="popular" <%= filters.sort === 'popular' ? 'selected' : '' %>>הנצפות ביותר</option></select></label>
       <button type="submit">חיפוש</button><a href="/">איפוס</a>
     </form>
-    <p class="meta"><%= total %> כתבות נמצאו</p>
+    <p class="meta" id="feed-total"><%= total %> כתבות נמצאו</p>
     <div id="article-feed" data-page="<%= page %>" data-has-more="<%= hasMore %>" data-api-url="/api/public/articles">
       <% articles.forEach((article) => { const content = article.published; if (!content) return; %>
         <article class="panel article-card" data-article-id="<%= article._id %>">
@@ -35,4 +35,5 @@
   </section>
   <%- include('../partials/sidebar') %>
 </div>
+<script src="/js/feed.js" defer></script>
 <%- include('../partials/footer') %>
