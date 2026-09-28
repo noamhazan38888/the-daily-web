@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> | The Daily Web</title>
+  <meta name="description" content="<%= typeof description === 'string' ? description : 'החדשות והכתבות של The Daily Web' %>">
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="/js/forms.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">דילוג לתוכן</a>
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="site-name" href="/" dir="ltr">The Daily Web</a>
+    <nav aria-label="ניווט ראשי">
+      <a href="/">חדשות</a>
+      <% if (typeof user !== 'undefined' && user) { %>
+        <a href="/<%= user.role === 'editor' ? 'editor' : 'reporter' %>">אזור <%= user.role === 'editor' ? 'העורך' : 'הכתב' %></a>
+        <span class="user-name"><%= user.displayName %></span>
+        <form action="/api/auth/logout" method="post" data-api-form data-redirect="/login">
+          <button class="button-secondary" type="submit">התנתקות</button>
+          <p class="form-message" role="status"></p>
+        </form>
+      <% } else { %>
+        <a href="/login">כניסת צוות</a>
+      <% } %>
+    </nav>
+  </div>
+</header>
+<main id="main" class="container page">

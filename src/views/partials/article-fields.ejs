@@ -1,0 +1,7 @@
+<label for="title">כותרת</label><input id="title" name="title" value="<%= content.title || '' %>" required minlength="3" maxlength="200">
+<label for="summary">תקציר</label><textarea id="summary" name="summary" required maxlength="500" rows="3"><%= content.summary || '' %></textarea>
+<label for="category">קטגוריה</label><input id="category" name="category" value="<%= content.category || '' %>" required maxlength="80">
+<label for="imageUrl">כתובת תמונה</label><input id="imageUrl" name="imageUrl" value="<%= content.imageUrl || '' %>" maxlength="2000" dir="ltr" placeholder="https://example.com/image.jpg" aria-describedby="image-help">
+<p class="meta" id="image-help">כתובת HTTP/HTTPS או נתיב מקומי המתחיל ב־/. התמונות מוצגות עם כותרת הכתבה כתיאור.</p>
+<label for="body">תוכן הכתבה</label><textarea id="body" name="body" required rows="16" aria-describedby="body-help"><%= content.body || '' %></textarea>
+<p class="meta" id="body-help">טקסט רגיל עם ירידות שורה. קוד HTML מוצג כטקסט.</p>

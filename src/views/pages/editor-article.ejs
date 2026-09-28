@@ -1,0 +1,38 @@
+<%- include('../partials/header', { title: 'בדיקת כתבה' }) %>
+<a href="/editor">← חזרה לרשימת הכתבות</a>
+<h1>בדיקת כתבה</h1>
+<p>מאת <%= article.reporter?.displayName || article.reporter?.username || 'כתב לא זמין' %> · <span class="status"><%= statusLabels[article.status] %></span></p>
+<% if (article.reviewNote) { %><p class="notice">הערת העורך: <%= article.reviewNote %></p><% } %>
+<div class="review-columns">
+  <section class="panel main-column"><h2>הגרסה לעריכה ובדיקה</h2><h3><%= article.draft.title %></h3><p class="category"><%= article.draft.category %></p><%- include('../partials/content', { content: article.draft }) %></section>
+  <section class="panel main-column"><h2>הגרסה האחרונה שאושרה</h2>
+    <% if (article.published) { %>
+      <p class="meta">גרסה <%= article.publishedVersion %> · <%= formatDate(article.publishedAt) %></p>
+      <p><%= article.status === 'published' ? 'מוצגת כעת באתר' : 'שמורה במערכת; אינה מוצגת כרגע באתר לפי הסטטוס הקיים' %></p>
+      <h3><%= article.published.title %></h3><p class="category"><%= article.published.category %></p><%- include('../partials/content', { content: article.published }) %>
+    <% } else { %><p>הכתבה טרם פורסמה.</p><% } %>
+  </section>
+</div>
+<section class="panel form-panel"><h2>עריכת התוכן והערת הבדיקה</h2>
+  <noscript><p class="notice">שמירה ופעולות בדיקה דורשות הפעלת JavaScript.</p></noscript>
+  <form class="stack-form" action="/api/editor/articles/<%= article._id %>" method="post" data-api-form data-method="PATCH" data-editor-draft data-redirect="/editor/articles/<%= article._id %>">
+    <%- include('../partials/article-fields', { content: article.draft }) %>
+    <label for="edit-note">הערת בדיקה</label><textarea id="edit-note" name="reviewNote" maxlength="2000" rows="3"><%= article.reviewNote || '' %></textarea>
+    <button type="submit">שמירת עריכה</button><p class="form-message" role="status"></p>
+  </form>
+</section>
+<section class="panel form-panel"><h2>פעולות עורך</h2><p class="meta">הפעולות מתייחסות לגרסה השמורה. יש לשמור עריכה לפני הפרסום.</p>
+  <% if (['pending_review', 'published'].includes(article.status)) { %>
+    <form action="/api/editor/articles/<%= article._id %>/publish" method="post" data-api-form data-redirect="/editor/articles/<%= article._id %>" data-confirm="לפרסם את הגרסה השמורה של הכתבה?">
+      <button type="submit">אישור ופרסום הגרסה השמורה</button><p class="form-message" role="status"></p>
+    </form>
+  <% } else { %><p>פרסום זמין רק לכתבה שממתינה לאישור או שכבר פורסמה.</p><% } %>
+  <form class="stack-form" action="/api/editor/articles/<%= article._id %>/request-changes" method="post" data-api-form data-redirect="/editor/articles/<%= article._id %>">
+    <label for="review-note">הערה לכתב</label><textarea id="review-note" name="reviewNote" required maxlength="2000" rows="3"><%= article.reviewNote || '' %></textarea>
+    <button class="button-secondary" type="submit">בקשת תיקונים</button><p class="form-message" role="status"></p>
+  </form>
+  <form class="delete-form" action="/api/editor/articles/<%= article._id %>" method="post" data-api-form data-method="DELETE" data-redirect="/editor" data-confirm="למחוק את הכתבה לצמיתות, כולל הגרסה שפורסמה?">
+    <button class="button-danger" type="submit">מחיקת כתבה</button><p class="form-message" role="status"></p>
+  </form>
+</section>
+<%- include('../partials/footer') %>

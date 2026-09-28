@@ -18,7 +18,6 @@
 
 ```text
 the-daily-web/
-├── .env.example              # תבנית משתני סביבה
 ├── .gitignore
 ├── package.json              # scripts ותלויות
 ├── package-lock.json
@@ -37,12 +36,14 @@ the-daily-web/
 	│   ├── Comment.js        # תגובות משתמשים ואורחים
 	│   └── ViewStats.js      # צפיות לפי כתבה וזמן
 	├── controllers/
+	│   ├── pageController.js
 	│   ├── authController.js
 	│   ├── publicController.js
 	│   ├── reporterController.js
 	│   ├── editorController.js
 	│   └── userController.js
 	├── routes/
+	│   ├── pageRoutes.js
 	│   ├── authRoutes.js
 	│   ├── publicRoutes.js
 	│   ├── reporterRoutes.js
@@ -51,13 +52,15 @@ the-daily-web/
 	├── middleware/
 	│   ├── auth.js            # requireAuth ו-requireRole
 	│   └── errorHandler.js
+	├── services/
+	│   └── weather.js        # מזג אוויר ו-cache בזיכרון
 	├── views/
 	│   ├── login.ejs
-	│   ├── partials/          # מיועד ל-header, footer ו-sidebar
-	│   └── pages/             # מיועד לעמודי המערכת
+	│   ├── partials/          # header, footer, sidebar, article ו-weather
+	│   └── pages/             # feed, article, reporter, editor ו-error
 	└── public/
-		├── css/               # קבצי CSS
-		├── js/                # JavaScript בדפדפן
+		├── css/               # עיצוב רספונסיבי
+		├── js/                # טפסים, פעולות צוות ו-weather
 		└── images/            # תמונות סטטיות
 ```
 
@@ -69,10 +72,27 @@ the-daily-web/
 
 ```powershell
 npm install
-Copy-Item .env.example .env
+New-Item -ItemType File -Path .env
+notepad .env
 ```
 
-יש לערוך את `.env` לפני הפעלת השרת.
+מלאו את `.env` בפרטי MongoDB ובסוד session לפני הפעלת השרת. הקובץ מקומי
+ואסור להוסיף אותו ל-Git. צרו סוד מקומי עבור `SESSION_SECRET` באמצעות Node:
+
+```powershell
+node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
+```
+
+הגדירו גם מיקום למזג האוויר (אפשר להשאיר את תל אביב כברירת מחדל):
+
+```env
+WEATHER_LOCATION_NAME=תל אביב
+WEATHER_LATITUDE=32.0853
+WEATHER_LONGITUDE=34.7818
+```
+
+לכל חבר צוות יש ליצור `.env` מקומי עם פרטי החיבור שלו. אין לשלוח סיסמאות או
+מפתחות דרך Git.
 
 ### MongoDB מקומי
 
@@ -80,13 +100,18 @@ Copy-Item .env.example .env
 NODE_ENV=development
 PORT=3000
 MONGODB_URI=mongodb://127.0.0.1:27017/the-daily-web
-SESSION_SECRET=replace-with-a-long-random-secret
+SESSION_SECRET=paste-the-generated-random-value-here
 SESSION_TTL_DAYS=7
+WEATHER_LOCATION_NAME=תל אביב
+WEATHER_LATITUDE=32.0853
+WEATHER_LONGITUDE=34.7818
 ```
 
 ### MongoDB Atlas
 
-אפשר להשתמש ב-connection string מסוג `mongodb+srv` ללא שינוי בקוד:
+שמרו ב-`MONGODB_URI` connection string מסוג `mongodb+srv` שקיבלתם מבעל
+המסד. אל תכניסו את הסיסמה ל-README או ל-Git. אם בונים את הכתובת ידנית, ציינו
+את שם מסד הנתונים בפרטי החיבור:
 
 ```env
 MONGODB_URI=mongodb+srv://USERNAME:PASSWORD@cluster.example.mongodb.net/the-daily-web?retryWrites=true&w=majority
@@ -207,6 +232,31 @@ PATCH  /api/users/:id
 DELETE /api/users/:id
 ```
 
+## עמודי EJS
+
+- `GET /` מציג את הפיד הציבורי עם חיפוש, קטגוריה, מיון ודפדוף.
+- `GET /articles/:id` מציג את גרסת `published` המלאה ב-HTML שנשלח מהשרת,
+  כולל כותרת, כתב, קטגוריה, תאריך, תמונה ותוכן. הכותרת והתקציר נכללים גם
+  במטא-דאטה של העמוד.
+- `GET /login` מציג את טופס הכניסה. התחברות HTML מפנה ל-`/reporter` או
+  ל-`/editor` לפי תפקיד המשתמש; נתיבי JSON של האימות נשארו זמינים.
+- אזור הכתב: `/reporter`, `/reporter/articles/new`,
+  `/reporter/articles/:id`.
+- אזור העורך: `/editor`, `/editor/articles/:id`.
+- טפסי הכתב והעורך שולחים בקשות JSON ל-API הקיים. הקוד בדפדפן מציג שגיאה
+  ומשאיר את הטופס פתוח אם הבקשה נכשלת.
+- CSS ו-JavaScript מוגשים מתוך `src/public`. הפריסה עוברת לעמודה אחת במסכים
+  צרים.
+
+## ווידג'ט מזג אוויר
+
+השרת מבקש מ-Open-Meteo טמפרטורה וקוד מזג אוויר לפי הקואורדינטות ב-`.env`.
+הבקשה הראשונה נשמרת בזיכרון התהליך לעשר דקות, ובקשות מקבילות חולקות אותה.
+השרת לא מציג נתונים שזמן המדידה שלהם או זמן שליפתם ישנים מ-15 דקות. בכשל זמני
+הוא משתמש בנתונים האחרונים אם הם עדיין צעירים מ-15 דקות; אחרת מוצגת הודעת
+זמינות. הבקשה החיצונית מוגבלת לארבע שניות, ובכשל יש המתנה של דקה לפני ניסיון
+חוזר. אין צורך במפתח API.
+
 ## סטטוסים של כתבה
 
 ```text
@@ -222,7 +272,14 @@ changes_requested  הוחזרה לתיקונים
 - `published` - הגרסה האחרונה שאושרה ומוצגת לציבור
 - `publicationEvents` - היסטוריית פרסומים לצורך Analytics
 
-כך עריכת כתבה מפורסמת אינה משנה מיד את התוכן שהציבור רואה.
+במודל קיימים שני שדות נפרדים, אך ה-query הציבורי הקיים דורש גם
+`status: 'published'`. בקר הכתב משנה סטטוס של כתבה שפורסמה ל-`pending_review`
+כאשר עורכים אותה, ולכן הגרסה שאושרה נעלמת זמנית מהעמודים הציבוריים. בעל
+ה-backend צריך להתאים את תנאי השאילתה או את מעבר הסטטוס.
+
+ל-API הקיים אין כרגע פעולה לשליחת טיוטה חדשה לאישור עורך. הטופס מאפשר לשמור
+את הכתבה, והעורך יכול לעבוד עם פעולות האישור ובקשת התיקונים שה-backend תומך
+בהן. הוספת שליחה לאישור ומעברי הסטטוס נשארה לאחריות מפתח ה-backend.
 
 ## בדיקות ואימות
 
@@ -244,6 +301,21 @@ Invoke-RestMethod http://localhost:3000/health
 {"status":"ok"}
 ```
 
+## בדיקה ידנית של ממשק האתר
+
+1. פתחו את `http://localhost:3000/`. נסו לחפש כותרת שקיימת במסד וגם מילה
+   שאינה קיימת, לסנן קטגוריה ולדפדף בין תוצאות.
+2. פתחו כתבה שפורסמה ובחרו **View Page Source**. הכותרת והגוף צריכים להופיע
+   בתגובת ה-HTML הראשונית.
+3. פתחו `/login`, התחברו לחשבון כתב או עורך ובדקו שההפניה מגיעה לאזור המתאים.
+4. בכתב בדקו יצירת טיוטה, שמירת עריכה והערת עורך. בעורך בדקו סקירת טיוטה,
+   בקשת תיקונים ופרסום לפי הסטטוסים הנתמכים.
+5. בדקו את הפיד, הכתבה והטפסים ברוחב שולחני, טאבלט וטלפון.
+6. בדקו שהווידג'ט מציג מזג אוויר כשהשירות זמין, והודעת זמינות כשהוא לא זמין.
+7. בדקו את `/api/public/articles` כדי לוודא שה-API עדיין מחזיר JSON.
+
+ה-seed הנוכחי יוצר משתמשי demo בלבד. בדיקות ממשק התוכן צריכות כתבות במסד.
+
 ## מה מומש עד עכשיו
 
 - שלד Express במבנה MVC
@@ -254,18 +326,18 @@ Invoke-RestMethod http://localhost:3000/health
 - הרשאות server-side לפי תפקיד
 - CRUD בסיסי לכתבות, משתמשים, תגובות ונתוני צפייה
 - pagination, חיפוש ומיון בסיסיים לפיד הציבורי
+- עמודי EJS ציבוריים, אזורי כתב ועורך ועיצוב מותאם למסכים צרים
+- ווידג'ט מזג אוויר עם cache של 10 דקות והגבלת גיל נתונים ל-15 דקות
 - תיעוד מבנה הפרויקט והפעלה
 
 ## המשך עבודה
 
-השלבים שעדיין נדרשים כדי להשלים את האפיון:
+השלבים בצד backend שעדיין נדרשים כדי להשלים את האפיון:
 
 - השלמת מעברי הכתבה עם בדיקת state machine מלאה
 - הגבלת תגובות ל-3 בדקה לפי מכשיר
 - ספירת צפייה אטומית ועדכון `ViewStats` בזמן צפייה
 - גרסאות מלאות והשוואת תוכן לעורך
-- EJS לעמודי הפיד, הכתבה, אזור הכתב ואזור העורך
 - AJAX, גלילה אינסופית ועדכון תגובות ללא רענון
 - Chart.js עבור Impact Analytics
-- ווידג'ט מזג אוויר עם cache של עד 15 דקות
 - seed מלא עם 500 כתבות, תגובות, עדכונים ונתוני צפייה

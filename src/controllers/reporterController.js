@@ -13,12 +13,15 @@ function articleInput(body) {
 export async function listReporterArticles(req, res) {
 	const articles = await Article.find({ reporter: req.session.user.id })
 		.sort({ updatedAt: -1 });
+	if (res.locals.pageView) return res.render('pages/workspace', { articles, role: 'reporter' });
 	res.json({ articles });
 }
 
 export async function getReporterArticle(req, res) {
 	const article = await Article.findOne({ _id: req.params.id, reporter: req.session.user.id });
+	if (!article && res.locals.pageView) return res.status(404).render('pages/error', { title: 'הכתבה לא נמצאה', message: 'הכתבה אינה זמינה לעריכה.' });
 	if (!article) return res.status(404).json({ error: 'Article not found' });
+	if (res.locals.pageView) return res.render('pages/reporter-form', { article });
 	res.json({ article });
 }
 

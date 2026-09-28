@@ -1,27 +1,12 @@
-<!doctype html>
-<html lang="he" dir="rtl">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>התחברות | The Daily</title>
-  </head>
-  <body>
-    <main>
-      <h1>התחברות</h1>
-      <% if (error) { %>
-        <p role="alert"><%= error %></p>
-      <% } %>
-      <form method="post" action="/api/auth/login">
-        <label>
-          שם משתמש
-          <input name="username" required autocomplete="username">
-        </label>
-        <label>
-          סיסמה
-          <input type="password" name="password" required autocomplete="current-password">
-        </label>
-        <button type="submit">התחברות</button>
-      </form>
-    </main>
-  </body>
-</html>
+<%- include('partials/header', { title: 'כניסת צוות' }) %>
+<section class="panel login-panel">
+  <h1>כניסת צוות</h1>
+  <p class="meta">התחברות לאזור הכתבים והעורכים</p>
+  <% if (error) { %><p class="notice" role="alert"><%= error %></p><% } %>
+  <form class="stack-form" method="post" action="/api/auth/login">
+    <label for="username">שם משתמש</label><input id="username" name="username" required autocomplete="username" dir="auto">
+    <label for="password">סיסמה</label><input id="password" type="password" name="password" required autocomplete="current-password">
+    <button type="submit">התחברות</button>
+  </form>
+</section>
+<%- include('partials/footer') %>

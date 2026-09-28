@@ -1,0 +1,23 @@
+<%- include('../partials/header', { title: role === 'editor' ? 'אזור העורך' : 'הכתבות שלי' }) %>
+<div class="page-heading actions"><h1><%= role === 'editor' ? 'אזור העורך' : 'הכתבות שלי' %></h1>
+  <% if (role === 'reporter') { %><a class="button" href="/reporter/articles/new">כתבה חדשה</a><% } %>
+</div>
+<% if (role === 'editor') { %>
+<form class="panel filters" method="get" action="/editor">
+  <label>סינון לפי סטטוס<select name="status"><option value="">כל הכתבות</option><% Object.entries(statusLabels).forEach(([value, label]) => { %><option value="<%= value %>" <%= selectedStatus === value ? 'selected' : '' %>><%= label %></option><% }); %></select></label><button type="submit">סינון</button>
+</form>
+<% } %>
+<% if (!articles.length) { %><p class="panel">אין כתבות להצגה.</p><% } %>
+<div class="workspace-list">
+<% articles.forEach((article) => { %>
+  <article class="panel">
+    <div class="actions"><h2><a href="/<%= role %>/articles/<%= article._id %>"><%= article.draft.title %></a></h2><span class="status"><%= statusLabels[article.status] || article.status %></span></div>
+    <p><%= article.draft.summary %></p>
+    <p class="meta"><%= article.draft.category %> · <% if (role === 'editor') { %><%= article.reporter?.displayName || article.reporter?.username || 'כתב לא זמין' %> · <% } %>עודכן: <time datetime="<%= new Date(article.updatedAt).toISOString() %>"><%= formatDate(article.updatedAt) %></time></p>
+    <% if (article.reviewNote) { %><p class="notice">הערת העורך: <%= article.reviewNote %></p><% } %>
+    <a href="/<%= role %>/articles/<%= article._id %>"><%= role === 'editor' ? 'בדיקת הכתבה' : 'עריכת הכתבה' %></a>
+    <% if (article.status === 'published') { %> · <a href="/articles/<%= article._id %>">צפייה באתר</a><% } %>
+  </article>
+<% }); %>
+</div>
+<%- include('../partials/footer') %>

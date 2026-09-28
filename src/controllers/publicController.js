@@ -21,14 +21,18 @@ export async function listPublishedArticles(req, res) {
 		Article.countDocuments(query)
 	]);
 
-	res.json({ articles, page, limit, total, hasMore: page * limit < total });
+	const data = { articles, page, limit, total, hasMore: page * limit < total };
+	if (res.locals.pageView) return res.render('pages/home', data);
+	res.json(data);
 }
 
 export async function getPublishedArticle(req, res) {
 	const article = await Article.findOne({ _id: req.params.id, status: 'published' })
 		.populate('reporter', 'displayName username');
 
+	if (!article && res.locals.pageView) return res.status(404).render('pages/error', { title: 'הכתבה לא נמצאה', message: 'הכתבה אינה זמינה לצפייה.' });
 	if (!article) return res.status(404).json({ error: 'Article not found' });
+	if (res.locals.pageView) return res.render('pages/article', { article });
 	res.json({ article });
 }
 

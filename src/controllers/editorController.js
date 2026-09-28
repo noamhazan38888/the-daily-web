@@ -6,12 +6,15 @@ export async function listArticles(req, res) {
 	const articles = await Article.find(filter)
 		.populate('reporter', 'displayName username')
 		.sort({ updatedAt: -1 });
+	if (res.locals.pageView) return res.render('pages/workspace', { articles, role: 'editor', selectedStatus: req.query.status || '' });
 	res.json({ articles });
 }
 
 export async function getArticle(req, res) {
 	const article = await Article.findById(req.params.id).populate('reporter', 'displayName username');
+	if (!article && res.locals.pageView) return res.status(404).render('pages/error', { title: 'הכתבה לא נמצאה', message: 'הכתבה אינה זמינה לבדיקה.' });
 	if (!article) return res.status(404).json({ error: 'Article not found' });
+	if (res.locals.pageView) return res.render('pages/editor-article', { article });
 	res.json({ article });
 }
 
