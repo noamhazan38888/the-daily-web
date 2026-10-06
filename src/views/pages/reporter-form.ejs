@@ -1,21 +1,49 @@
+<%
+  const isLocked = article?.status === 'pending_review';
+  const canSubmit = !article || ['draft', 'changes_requested'].includes(article.status);
+  const isUpdate = Boolean(article?.published);
+%>
 <%- include('../partials/header', { title: article ? 'עריכת כתבה' : 'כתבה חדשה' }) %>
 <a href="/reporter">← חזרה לכתבות שלי</a>
 <section class="panel form-panel">
-  <h1><%= article ? 'עריכת כתבה' : 'כתבה חדשה' %></h1>
-  <% if (article) { %><p class="status"><%= statusLabels[article.status] %></p><% } %>
+  <div class="actions">
+    <h1><%= article ? 'עריכת כתבה' : 'כתבה חדשה' %></h1>
+    <span class="status" data-status-label><%= article ? statusLabels[article.status] : statusLabels.draft %></span>
+  </div>
   <% if (article?.reviewNote) { %><p class="notice">הערת העורך: <%= article.reviewNote %></p><% } %>
-  <% if (article?.published) { %><p class="notice">שמירת עדכון עשויה להסיר זמנית את הכתבה מהאתר עד לאישור העורך, בהתאם לתהליך הקיים.</p><% } %>
-  <p class="meta">ניתן לשמור את הכתבה. שליחה לאישור עדיין אינה זמינה במערכת.</p>
-  <noscript><p class="notice">שמירת כתבות דורשת הפעלת JavaScript בדפדפן.</p></noscript>
-  <form class="stack-form" action="/api/reporter/articles<%= article ? '/' + article._id : '' %>" method="post" data-api-form data-method="<%= article ? 'PATCH' : 'POST' %>" data-redirect="/reporter">
-    <%- include('../partials/article-fields', { content: article?.draft || {} }) %>
-    <div class="actions"><button type="submit">שמירת כתבה</button><a href="/reporter">ביטול</a></div>
-    <p class="form-message" role="status"></p>
+  <% if (isUpdate) { %>
+    <p class="notice">הכתבה מפורסמת באתר (גרסה <%= article.publishedVersion %>). השינויים נשמרים כגרסה חדשה, והקוראים ימשיכו לראות את הגרסה שאושרה עד שעורך יאשר את העדכון. <a href="/articles/<%= article._id %>">לגרסה המוצגת באתר</a></p>
+  <% } %>
+  <% if (isLocked) { %>
+    <p class="notice">הכתבה ממתינה לאישור עורך ולכן אינה ניתנת לעריכה כרגע.</p>
+  <% } else { %>
+    <p class="meta">הכתבה נשמרת אוטומטית בזמן הכתיבה, ואפשר להמשיך לעבוד עליה מכל מחשב.</p>
+  <% } %>
+  <noscript><p class="notice">שמירה אוטומטית ושליחה לאישור דורשות הפעלת JavaScript בדפדפן.</p></noscript>
+  <form class="stack-form" action="/api/reporter/articles<%= article ? '/' + article._id : '' %>" method="post"
+    data-autosave-form
+    data-article-id="<%= article?._id ?? '' %>"
+    data-updated-at="<%= article ? new Date(article.updatedAt).toISOString() : '' %>"
+    data-status-labels="<%= JSON.stringify(statusLabels) %>"
+    <%= isLocked ? 'data-locked' : '' %>>
+    <fieldset class="plain-fieldset" <%= isLocked ? 'disabled' : '' %>>
+      <legend class="visually-hidden">פרטי הכתבה</legend>
+      <%- include('../partials/article-fields', { content: article?.draft || {} }) %>
+    </fieldset>
+    <% if (!isLocked) { %>
+      <div class="actions">
+        <button type="submit" data-submit-review <%= canSubmit ? '' : 'hidden' %>><%= isUpdate ? 'שליחת העדכון לאישור עורך' : 'שליחה לאישור עורך' %></button>
+        <a href="/reporter">חזרה לרשימה</a>
+        <p class="save-status" data-save-status role="status" aria-live="polite"></p>
+      </div>
+    <% } %>
+    <p class="form-message" data-form-message role="alert"></p>
   </form>
-  <% if (article && article.status !== 'published') { %>
+  <% if (article && !article.published && !isLocked) { %>
     <form class="delete-form" action="/api/reporter/articles/<%= article._id %>" method="post" data-api-form data-method="DELETE" data-redirect="/reporter" data-confirm="למחוק את הכתבה וכל הגרסאות השמורות שלה? לא ניתן לבטל פעולה זו.">
       <button class="button-danger" type="submit">מחיקת כתבה</button><p class="form-message" role="status"></p>
     </form>
   <% } %>
 </section>
+<script src="/js/reporter-editor.js" defer></script>
 <%- include('../partials/footer') %>
