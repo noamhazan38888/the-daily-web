@@ -11,12 +11,13 @@
 <div class="workspace-list">
 <% articles.forEach((article) => { %>
   <article class="panel">
-    <div class="actions"><h2><a href="/<%= role %>/articles/<%= article._id %>"><%= article.draft.title %></a></h2><span class="status"><%= statusLabels[article.status] || article.status %></span></div>
+    <div class="actions"><h2><a href="/<%= role %>/articles/<%= article._id %>"><%= article.draft.title || '(כתבה ללא כותרת)' %></a></h2><span class="status"><%= statusLabels[article.status] || article.status %></span></div>
     <p><%= article.draft.summary %></p>
+    <% if (article.publishedVersion > 0 && article.status !== 'published') { %><p class="meta">עדכון לכתבה שפורסמה · הגרסה שאושרה ממשיכה להופיע באתר</p><% } %>
     <p class="meta"><%= article.draft.category %> · <% if (role === 'editor') { %><%= article.reporter?.displayName || article.reporter?.username || 'כתב לא זמין' %> · <% } %>עודכן: <time datetime="<%= new Date(article.updatedAt).toISOString() %>"><%= formatDate(article.updatedAt) %></time></p>
     <% if (article.reviewNote) { %><p class="notice">הערת העורך: <%= article.reviewNote %></p><% } %>
     <a href="/<%= role %>/articles/<%= article._id %>"><%= role === 'editor' ? 'בדיקת הכתבה' : 'עריכת הכתבה' %></a>
-    <% if (article.status === 'published') { %> · <a href="/articles/<%= article._id %>">צפייה באתר</a><% } %>
+    <% if (article.publishedVersion > 0) { %> · <a href="/articles/<%= article._id %>">צפייה באתר</a><% } %>
   </article>
 <% }); %>
 </div>

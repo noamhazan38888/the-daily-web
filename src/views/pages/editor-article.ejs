@@ -8,7 +8,7 @@
   <section class="panel main-column"><h2>הגרסה האחרונה שאושרה</h2>
     <% if (article.published) { %>
       <p class="meta">גרסה <%= article.publishedVersion %> · <%= formatDate(article.publishedAt) %></p>
-      <p><%= article.status === 'published' ? 'מוצגת כעת באתר' : 'שמורה במערכת; אינה מוצגת כרגע באתר לפי הסטטוס הקיים' %></p>
+      <p>מוצגת כעת באתר<%= article.status === 'published' ? '' : '; תוחלף בגרסה החדשה רק לאחר אישור' %></p>
       <h3><%= article.published.title %></h3><p class="category"><%= article.published.category %></p><%- include('../partials/content', { content: article.published }) %>
     <% } else { %><p>הכתבה טרם פורסמה.</p><% } %>
   </section>
