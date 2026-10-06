@@ -36,6 +36,19 @@ const articleContentSchema = new mongoose.Schema(
 	{ _id: false }
 );
 
+// The working copy is saved automatically while the reporter types, so it may be
+// incomplete. Completeness is checked when it is submitted for review.
+const draftContentSchema = new mongoose.Schema(
+	{
+		title: { type: String, trim: true, maxlength: 200, default: '' },
+		summary: { type: String, trim: true, maxlength: 500, default: '' },
+		body: { type: String, default: '' },
+		imageUrl: { type: String, trim: true, maxlength: 2_000, default: null },
+		category: { type: String, trim: true, maxlength: 80, default: '' }
+	},
+	{ _id: false }
+);
+
 const publicationEventSchema = new mongoose.Schema(
 	{
 		version: { type: Number, required: true, min: 1 },
@@ -65,8 +78,9 @@ const articleSchema = new mongoose.Schema(
 			index: true
 		},
 		draft: {
-			type: articleContentSchema,
-			required: true
+			type: draftContentSchema,
+			required: true,
+			default: () => ({})
 		},
 		published: {
 			type: articleContentSchema,
@@ -103,5 +117,11 @@ const articleSchema = new mongoose.Schema(
 
 articleSchema.index({ status: 1, publishedAt: -1 });
 articleSchema.index({ 'draft.title': 'text', 'published.title': 'text' });
+
+export const ARTICLE_CONTENT_FIELDS = ['title', 'summary', 'body', 'imageUrl', 'category'];
+
+// An article is public once an editor approved a version of it. `status` describes
+// the working copy, so a published article that is being updated stays visible.
+export const PUBLIC_ARTICLE_FILTER = { published: { $ne: null } };
 
 export const Article = mongoose.model('Article', articleSchema);
