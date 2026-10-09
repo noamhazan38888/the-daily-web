@@ -1,0 +1,95 @@
+<%- include('../partials/header', { title: 'ניתוח צפיות' }) %>
+<a href="/editor/articles/<%= article._id %>">← חזרה לבדיקת הכתבה</a>
+<div class="page-heading actions">
+  <h1>ניתוח צפיות: <%= article.published?.title || article.draft.title %></h1>
+  <span class="status"><%= statusLabels[article.status] || article.status %></span>
+</div>
+<p class="meta">גרסה נוכחית: <%= article.publishedVersion %> · פורסמה לראשונה: <%= formatDate(article.publicationEvents[0]?.publishedAt) %></p>
+<section class="panel">
+  <% if (!stats.length) { %>
+    <p>אין עדיין נתוני צפייה לכתבה זו.</p>
+  <% } else { %>
+    <canvas id="views-chart" height="120"></canvas>
+    <p class="meta">המשולשים האדומים על הגרף מסמנים מועדים שבהם הכתבה עודכנה ופורסמה מחדש.</p>
+  <% } %>
+</section>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  (function () {
+    const stats = <%- JSON.stringify(stats.map((s) => ({ date: s.bucketStart, views: s.views }))).replace(/</g, '\\u003c') %>;
+    const events = <%- JSON.stringify(article.publicationEvents.map((e) => ({ date: e.publishedAt, version: e.version }))).replace(/</g, '\\u003c') %>;
+    const canvas = document.getElementById('views-chart');
+    if (!canvas || !stats.length) return;
+
+    const labels = stats.map((s) => new Date(s.date).toLocaleDateString('he-IL'));
+
+    function closestIndex(targetDate) {
+      const target = new Date(targetDate).getTime();
+      let bestIndex = 0;
+      let bestDiff = Infinity;
+      stats.forEach((s, index) => {
+        const diff = Math.abs(new Date(s.date).getTime() - target);
+        if (diff < bestDiff) {
+          bestDiff = diff;
+          bestIndex = index;
+        }
+      });
+      return bestIndex;
+    }
+
+    const markerPoints = events.map((event) => {
+      const index = closestIndex(event.date);
+      return { x: labels[index], y: stats[index].views, version: event.version, date: event.date };
+    });
+
+    new Chart(canvas, {
+      data: {
+        labels,
+        datasets: [
+          {
+            type: 'line',
+            label: 'צפיות ביום',
+            data: stats.map((s) => s.views),
+            borderColor: '#2563eb',
+            backgroundColor: 'rgba(37, 99, 235, 0.12)',
+            tension: 0.25,
+            fill: true,
+            pointRadius: 2
+          },
+          {
+            type: 'scatter',
+            label: 'עדכון ופרסום מחדש',
+            data: markerPoints,
+            backgroundColor: '#dc2626',
+            borderColor: '#dc2626',
+            pointStyle: 'triangle',
+            pointRadius: 9,
+            pointHoverRadius: 11,
+            showLine: false
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        interaction: { mode: 'nearest', intersect: false },
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label(context) {
+                if (context.dataset.label === 'עדכון ופרסום מחדש') {
+                  const point = markerPoints[context.dataIndex];
+                  return `עודכן ופורסם מחדש — גרסה ${point.version} (${new Date(point.date).toLocaleDateString('he-IL')})`;
+                }
+                return `${context.dataset.label}: ${context.parsed.y}`;
+              }
+            }
+          }
+        },
+        scales: {
+          y: { beginAtZero: true, title: { display: true, text: 'צפיות' } }
+        }
+      }
+    });
+  })();
+</script>
+<%- include('../partials/footer') %>
