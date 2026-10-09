@@ -1,11 +1,11 @@
-import { Article } from '../models/Article.js';
+import { Article, PUBLIC_ARTICLE_FILTER } from '../models/Article.js';
 import { Comment } from '../models/Comment.js';
 
 export async function listPublishedArticles(req, res) {
 
 	const page = Math.max(Number.parseInt(req.query.page, 10) || 1, 1);
 	const limit = Math.min(Math.max(Number.parseInt(req.query.limit, 10) || 20, 1), 50);
-	const query = { status: 'published' };
+	const query = { ...PUBLIC_ARTICLE_FILTER };
 
 	if (req.query.search) {
 		const term = String(req.query.search).trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -34,7 +34,7 @@ export async function listPublishedArticles(req, res) {
 
 export async function getPublishedArticle(req, res) {
 	const [article, comments] = await Promise.all([
-		Article.findOne({ _id: req.params.id, status: 'published' })
+		Article.findOne({ _id: req.params.id, ...PUBLIC_ARTICLE_FILTER })
 			.populate('reporter', 'displayName username'),
 		Comment.find({ article: req.params.id, status: 'visible' })
 			.populate('author', 'displayName username')
@@ -89,7 +89,7 @@ export async function createComment(req, res) {
 	const body = String(req.body.body ?? '').trim();
 	if (!body) return res.status(400).json({ error: 'תגובה לא יכולה להיות ריקה.' });
 
-	const article = await Article.exists({ _id: req.params.id, status: 'published' });
+	const article = await Article.exists({ _id: req.params.id, ...PUBLIC_ARTICLE_FILTER });
 	if (!article) return res.status(404).json({ error: 'Published article not found' });
 
 	const comment = await Comment.create({

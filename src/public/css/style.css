@@ -396,6 +396,41 @@ label {
 .button-danger:hover {
   background: #9a3030;
 }
+.plain-fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.plain-fieldset:disabled input,
+.plain-fieldset:disabled textarea {
+  background: #f1f4f6;
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.save-status {
+  margin: 0;
+  color: var(--muted);
+  font-size: .9rem;
+}
+.save-status:empty {
+  display: none;
+}
+.save-status[data-state="saved"] {
+  color: #2d6a3e;
+}
+.save-status[data-state="error"] {
+  color: #923030;
+}
 @media (max-width: 900px) {
   .review-columns {
     flex-direction: column;
