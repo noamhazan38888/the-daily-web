@@ -1,7 +1,7 @@
 <%- include('../partials/header', { title: 'בדיקת כתבה' }) %>
 <a href="/editor">← חזרה לרשימת הכתבות</a>
 <h1>בדיקת כתבה</h1>
-<p>מאת <%= article.reporter?.displayName || article.reporter?.username || 'כתב לא זמין' %> · <span class="status"><%= statusLabels[article.status] %></span></p>
+<p>מאת <%= article.reporter?.displayName || article.reporter?.username || 'כתב לא זמין' %> · <span class="status"><%= statusLabels[article.status] %></span><% if (article.publishedVersion > 0) { %> · <a href="/editor/articles/<%= article._id %>/analytics">ניתוח צפיות</a><% } %></p>
 <% if (article.reviewNote) { %><p class="notice">הערת העורך: <%= article.reviewNote %></p><% } %>
 <div class="review-columns">
   <section class="panel main-column"><h2>הגרסה לעריכה ובדיקה</h2><h3><%= article.draft.title %></h3><p class="category"><%= article.draft.category %></p><%- include('../partials/content', { content: article.draft }) %></section>
