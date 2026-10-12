@@ -20,7 +20,13 @@ export function createApp() {
 
   app.set('view engine', 'ejs');
   app.set('views', path.join(currentDirectory, 'views'));
-  app.use(helmet());
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        imgSrc: ["'self'", 'data:', 'https:']
+      }
+    }
+  }));
   app.use(morgan('combined'));
   app.use(express.static(path.join(currentDirectory, 'public')));
   app.use(express.urlencoded({ extended: false }));
