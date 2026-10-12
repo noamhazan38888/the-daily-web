@@ -23,7 +23,7 @@ export function createApp() {
   app.use(helmet({
     contentSecurityPolicy: {
       directives: {
-        imgSrc: ["'self'", 'data:', 'https://openweathermap.org/img/wn/']
+        imgSrc: ["'self'", 'data:', 'https:']
       }
     }
   }));
