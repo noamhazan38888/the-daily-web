@@ -226,6 +226,9 @@
     // Sort select — apply immediately on change, no debounce needed
     filtersForm.querySelector('select[name="sort"]')
       ?.addEventListener('change', applyFilters);
+
+    filtersForm.querySelector('select[name="watched"]')
+      ?.addEventListener('change', applyFilters);
   }
 
   // --- Initial setup ---

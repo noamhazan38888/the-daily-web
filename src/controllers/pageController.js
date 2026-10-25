@@ -13,7 +13,8 @@ export function preparePage(req, res, next) {
   res.locals.filters = {
     search: typeof req.query.search === 'string' ? req.query.search : '',
     category: typeof req.query.category === 'string' ? req.query.category : '',
-    sort: req.query.sort === 'popular' ? 'popular' : ''
+    sort: req.query.sort === 'popular' ? 'popular' : '',
+    watched: ['read', 'unread'].includes(req.query.watched) ? req.query.watched : ''
   };
   res.locals.formatDate = (value) => value ? new Date(value).toLocaleString('he-IL', {
     timeZone: 'Asia/Jerusalem', dateStyle: 'medium', timeStyle: 'short'

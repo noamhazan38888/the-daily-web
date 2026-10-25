@@ -1,5 +1,7 @@
 import { Article, PUBLIC_ARTICLE_FILTER } from '../models/Article.js';
 import { Comment } from '../models/Comment.js';
+import { ArticleRead } from '../models/ArticleRead.js';
+import { ViewStats } from '../models/ViewStats.js';
 
 export async function listPublishedArticles(req, res) {
 
@@ -14,6 +16,11 @@ export async function listPublishedArticles(req, res) {
 	if (req.query.category) {
 		const term = String(req.query.category).trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 		if (term) query['published.category'] = { $regex: term, $options: 'i' };
+	}
+
+	if (req.query.watched === 'read' || req.query.watched === 'unread') {
+		const reads = req.viewerId ? await ArticleRead.find({ viewerId: req.viewerId }).distinct('article') : [];
+		query._id = req.query.watched === 'read' ? { $in: reads } : { $nin: reads };
 	}
 
 	const sort = req.query.sort === 'popular' ? { viewCount: -1, publishedAt: -1 } : { publishedAt: -1 };
@@ -43,8 +50,34 @@ export async function getPublishedArticle(req, res) {
 
 	if (!article && res.locals.pageView) return res.status(404).render('pages/error', { title: 'הכתבה לא נמצאה', message: 'הכתבה אינה זמינה לצפייה.' });
 	if (!article) return res.status(404).json({ error: 'Article not found' });
-	if (res.locals.pageView) return res.render('pages/article', { article, comments });
+	if (res.locals.pageView) {
+		await recordView(req, article);
+		return res.render('pages/article', { article, comments });
+	}
 	res.json({ article });
+}
+
+async function recordView(req, article) {
+	try {
+		const bucketStart = new Date();
+		bucketStart.setHours(0, 0, 0, 0);
+		await Promise.all([
+			ArticleRead.updateOne(
+				{ viewerId: req.viewerId, article: article._id },
+				{ $setOnInsert: { viewerId: req.viewerId, article: article._id } },
+				{ upsert: true }
+			),
+			Article.updateOne({ _id: article._id }, { $inc: { viewCount: 1 } }),
+			ViewStats.updateOne(
+				{ article: article._id, bucketStart },
+				{ $inc: { views: 1 }, $set: { publicationVersion: article.publishedVersion } },
+				{ upsert: true }
+			)
+		]);
+	} catch (error) {
+		// Tracking must never prevent the article from rendering.
+		console.error('Failed to record article view', error);
+	}
 }
 
 export async function listArticleComments(req, res) {
@@ -55,20 +88,21 @@ export async function listArticleComments(req, res) {
 	res.json({ comments });
 }
 
-// In-memory spam guard: sessionID → array of submission timestamps
+// In-memory spam guard: client IP → array of submission timestamps.
+// Guest sessions are never persisted, so the session ID cannot identify a device.
 const guestCommentLog = new Map();
 const SPAM_MAX = 3;
 const SPAM_WINDOW_MS = 60_000;
 
-function isSpam(sessionId) {
+function isSpam(clientKey) {
 	const now = Date.now();
-	const hits = (guestCommentLog.get(sessionId) ?? []).filter(t => now - t < SPAM_WINDOW_MS);
+	const hits = (guestCommentLog.get(clientKey) ?? []).filter(t => now - t < SPAM_WINDOW_MS);
 	if (hits.length >= SPAM_MAX) {
-		guestCommentLog.set(sessionId, hits);
+		guestCommentLog.set(clientKey, hits);
 		return true;
 	}
 	hits.push(now);
-	guestCommentLog.set(sessionId, hits);
+	guestCommentLog.set(clientKey, hits);
 	return false;
 }
 
@@ -82,7 +116,7 @@ setInterval(() => {
 
 export async function createComment(req, res) {
 	// Rate-limit guests only; logged-in staff are trusted
-	if (!req.session?.user && req.sessionID && isSpam(req.sessionID)) {
+	if (!req.session?.user && isSpam(req.ip)) {
 		return res.status(429).json({ error: 'שלחת יותר מדי תגובות. המתן דקה ונסה שוב.' });
 	}
 

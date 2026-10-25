@@ -10,6 +10,7 @@ import pageRoutes from './routes/pageRoutes.js';
 import reporterRoutes from './routes/reporterRoutes.js';
 import editorRoutes from './routes/editorRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+import { identifyViewer } from './middleware/viewer.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 
 const currentFile = fileURLToPath(import.meta.url);
@@ -29,9 +30,11 @@ export function createApp() {
   }));
   app.use(morgan('combined'));
   app.use(express.static(path.join(currentDirectory, 'public')));
+  app.use('/vendor/chart.js', express.static(path.join(currentDirectory, '..', 'node_modules', 'chart.js', 'dist', 'chart.umd.js')));
   app.use(express.urlencoded({ extended: false }));
   app.use(express.json());
   app.use(createSessionMiddleware());
+  app.use(identifyViewer);
 
   app.get('/health', (req, res) => {
     res.json({ status: 'ok' });
