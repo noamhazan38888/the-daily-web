@@ -1,5 +1,7 @@
 import { Article, PUBLIC_ARTICLE_FILTER } from '../models/Article.js';
 import { Comment } from '../models/Comment.js';
+import { ArticleRead } from '../models/ArticleRead.js';
+import { ViewStats } from '../models/ViewStats.js';
 
 export async function listPublishedArticles(req, res) {
 
@@ -43,8 +45,34 @@ export async function getPublishedArticle(req, res) {
 
 	if (!article && res.locals.pageView) return res.status(404).render('pages/error', { title: 'הכתבה לא נמצאה', message: 'הכתבה אינה זמינה לצפייה.' });
 	if (!article) return res.status(404).json({ error: 'Article not found' });
-	if (res.locals.pageView) return res.render('pages/article', { article, comments });
+	if (res.locals.pageView) {
+		await recordView(req, article);
+		return res.render('pages/article', { article, comments });
+	}
 	res.json({ article });
+}
+
+async function recordView(req, article) {
+	try {
+		const bucketStart = new Date();
+		bucketStart.setHours(0, 0, 0, 0);
+		await Promise.all([
+			ArticleRead.updateOne(
+				{ viewerId: req.viewerId, article: article._id },
+				{ $setOnInsert: { viewerId: req.viewerId, article: article._id } },
+				{ upsert: true }
+			),
+			Article.updateOne({ _id: article._id }, { $inc: { viewCount: 1 } }),
+			ViewStats.updateOne(
+				{ article: article._id, bucketStart },
+				{ $inc: { views: 1 }, $set: { publicationVersion: article.publishedVersion } },
+				{ upsert: true }
+			)
+		]);
+	} catch (error) {
+		// Tracking must never prevent the article from rendering.
+		console.error('Failed to record article view', error);
+	}
 }
 
 export async function listArticleComments(req, res) {
