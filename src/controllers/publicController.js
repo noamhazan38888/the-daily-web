@@ -55,20 +55,21 @@ export async function listArticleComments(req, res) {
 	res.json({ comments });
 }
 
-// In-memory spam guard: sessionID → array of submission timestamps
+// In-memory spam guard: client IP → array of submission timestamps.
+// Guest sessions are never persisted, so the session ID cannot identify a device.
 const guestCommentLog = new Map();
 const SPAM_MAX = 3;
 const SPAM_WINDOW_MS = 60_000;
 
-function isSpam(sessionId) {
+function isSpam(clientKey) {
 	const now = Date.now();
-	const hits = (guestCommentLog.get(sessionId) ?? []).filter(t => now - t < SPAM_WINDOW_MS);
+	const hits = (guestCommentLog.get(clientKey) ?? []).filter(t => now - t < SPAM_WINDOW_MS);
 	if (hits.length >= SPAM_MAX) {
-		guestCommentLog.set(sessionId, hits);
+		guestCommentLog.set(clientKey, hits);
 		return true;
 	}
 	hits.push(now);
-	guestCommentLog.set(sessionId, hits);
+	guestCommentLog.set(clientKey, hits);
 	return false;
 }
 
@@ -82,7 +83,7 @@ setInterval(() => {
 
 export async function createComment(req, res) {
 	// Rate-limit guests only; logged-in staff are trusted
-	if (!req.session?.user && req.sessionID && isSpam(req.sessionID)) {
+	if (!req.session?.user && isSpam(req.ip)) {
 		return res.status(429).json({ error: 'שלחת יותר מדי תגובות. המתן דקה ונסה שוב.' });
 	}
 
