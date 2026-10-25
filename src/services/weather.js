@@ -10,42 +10,45 @@ function isFresh() {
     Date.now() - cachedWeather.observedAt < MAX_AGE;
 }
 
-function weatherDescription(code) {
-  if (code === 0) return 'בהיר';
-  if (code >= 1 && code <= 3) return 'מעונן חלקית עד מעונן';
-  if ([45, 48].includes(code)) return 'ערפל';
-  if (code >= 51 && code <= 67) return 'טפטוף או גשם';
-  if (code >= 71 && code <= 77) return 'שלג';
-  if (code >= 80 && code <= 82) return 'ממטרים';
-  if ([85, 86].includes(code)) return 'ממטרי שלג';
-  if (code >= 95) return 'סופות רעמים';
-  return 'מזג אוויר משתנה';
-}
-
 async function fetchWeather() {
   try {
+    const apiKey = process.env.OPENWEATHER_API_KEY?.trim();
+    if (!apiKey) throw new Error('Weather API key is missing');
+
     const latitude = Number(process.env.WEATHER_LATITUDE ?? 32.0853);
     const longitude = Number(process.env.WEATHER_LONGITUDE ?? 34.7818);
     if (!Number.isFinite(latitude) || Math.abs(latitude) > 90 ||
         !Number.isFinite(longitude) || Math.abs(longitude) > 180) {
       throw new Error('Invalid weather location');
     }
-    const url = new URL('https://api.open-meteo.com/v1/forecast');
-    url.search = new URLSearchParams({ latitude, longitude,
-      current: 'temperature_2m,weather_code', timeformat: 'unixtime' }).toString();
+
+    const url = new URL('https://api.openweathermap.org/data/2.5/weather');
+    url.search = new URLSearchParams({
+      lat: String(latitude), lon: String(longitude), appid: apiKey,
+      units: 'metric', lang: 'he'
+    }).toString();
     const response = await fetch(url, { signal: AbortSignal.timeout(4000) });
     if (!response.ok) throw new Error('Weather request failed');
-    const { current } = await response.json();
-    const observedAt = typeof current?.time === 'number' ? current.time * 1000 : NaN;
-    if (!Number.isFinite(current?.temperature_2m) || !Number.isFinite(current?.weather_code) ||
-        !Number.isFinite(observedAt) || observedAt > Date.now() || Date.now() - observedAt >= MAX_AGE) {
+
+    const data = await response.json();
+    const condition = data.weather?.[0];
+    const observedAt = Number.isFinite(data.dt) ? data.dt * 1000 : NaN;
+    const now = Date.now();
+    if (!Number.isFinite(data.main?.temp) || typeof condition?.description !== 'string' ||
+        !condition.description.trim() || !Number.isFinite(observedAt) ||
+        observedAt > now || now - observedAt >= MAX_AGE) {
       throw new Error('Weather data is missing or outdated');
     }
-    fetchedAt = Date.now();
+
+    fetchedAt = now;
     cachedWeather = {
-      location: process.env.WEATHER_LOCATION_NAME ?? 'תל אביב',
-      temperature: Math.round(current.temperature_2m),
-      description: weatherDescription(current.weather_code), observedAt, fetchedAt
+      location: process.env.WEATHER_LOCATION_NAME || data.name || 'תל אביב',
+      temperature: Math.round(data.main.temp),
+      description: condition.description,
+      icon: typeof condition.icon === 'string' && /^\d{2}[dn]$/.test(condition.icon)
+        ? condition.icon : null,
+      observedAt,
+      fetchedAt
     };
     retryAt = 0;
     return cachedWeather;
