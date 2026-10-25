@@ -59,6 +59,18 @@ export async function requestChanges(req, res) {
 	res.json({ article });
 }
 
+export async function getArticleAnalytics(req, res) {
+	const article = await Article.findById(req.params.id);
+	if (!article || !article.published) {
+		if (res.locals.pageView) return res.status(404).render('pages/error', { title: 'הכתבה לא נמצאה', message: 'הנתונים זמינים רק לכתבה שפורסמה.' });
+		return res.status(404).json({ error: 'Article not found or not yet published' });
+	}
+
+	const stats = await ViewStats.find({ article: article._id }).sort({ bucketStart: 1 });
+	if (res.locals.pageView) return res.render('pages/editor-analytics', { article, stats });
+	res.json({ article, stats });
+}
+
 export async function deleteArticle(req, res) {
 	const article = await Article.findByIdAndDelete(req.params.id);
 	if (!article) return res.status(404).json({ error: 'Article not found' });

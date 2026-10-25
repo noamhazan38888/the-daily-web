@@ -3,7 +3,7 @@ import { listPublishedArticles, getPublishedArticle } from '../controllers/publi
 import { preparePage, requirePageRole, loadWeather } from '../controllers/pageController.js';
 import { showLogin } from '../controllers/authController.js';
 import { listReporterArticles, getReporterArticle } from '../controllers/reporterController.js';
-import { listArticles, getArticle } from '../controllers/editorController.js';
+import { listArticles, getArticle, getArticleAnalytics } from '../controllers/editorController.js';
 
 const router = Router();
 
@@ -18,6 +18,7 @@ router.get('/reporter/articles/new', preparePage, requirePageRole('reporter'), (
 router.get('/reporter/articles/:id', preparePage, requirePageRole('reporter'), getReporterArticle);
 router.get('/editor', preparePage, requirePageRole('editor'), listArticles);
 router.get('/editor/articles/:id', preparePage, requirePageRole('editor'), getArticle);
+router.get('/editor/articles/:id/analytics', preparePage, requirePageRole('editor'), getArticleAnalytics);
 
 router.use((error, req, res, next) => {
   if (!res.locals.pageView || res.headersSent) return next(error);

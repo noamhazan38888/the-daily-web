@@ -18,6 +18,18 @@
     <% if (article.reviewNote) { %><p class="notice">הערת העורך: <%= article.reviewNote %></p><% } %>
     <a href="/<%= role %>/articles/<%= article._id %>"><%= role === 'editor' ? 'בדיקת הכתבה' : 'עריכת הכתבה' %></a>
     <% if (article.publishedVersion > 0) { %> · <a href="/articles/<%= article._id %>">צפייה באתר</a><% } %>
+    <% if (role === 'editor' && article.status === 'pending_review') { %>
+    <div class="actions">
+      <form action="/api/editor/articles/<%= article._id %>/publish" method="post" data-api-form data-redirect="/editor<%= selectedStatus ? '?status=' + selectedStatus : '' %>" data-confirm="לאשר ולפרסם את הגרסה השמורה של הכתבה?">
+        <button type="submit">אישור ופרסום</button><p class="form-message" role="status"></p>
+      </form>
+      <form class="stack-form" action="/api/editor/articles/<%= article._id %>/request-changes" method="post" data-api-form data-redirect="/editor<%= selectedStatus ? '?status=' + selectedStatus : '' %>">
+        <label for="review-note-<%= article._id %>">החזרה לתיקון · הערה לכתב</label>
+        <textarea id="review-note-<%= article._id %>" name="reviewNote" required maxlength="2000" rows="2"></textarea>
+        <button class="button-secondary" type="submit">בקשת תיקונים</button><p class="form-message" role="status"></p>
+      </form>
+    </div>
+    <% } %>
   </article>
 <% }); %>
 </div>
