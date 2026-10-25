@@ -18,6 +18,11 @@ export async function listPublishedArticles(req, res) {
 		if (term) query['published.category'] = { $regex: term, $options: 'i' };
 	}
 
+	if (req.query.watched === 'read' || req.query.watched === 'unread') {
+		const reads = req.viewerId ? await ArticleRead.find({ viewerId: req.viewerId }).distinct('article') : [];
+		query._id = req.query.watched === 'read' ? { $in: reads } : { $nin: reads };
+	}
+
 	const sort = req.query.sort === 'popular' ? { viewCount: -1, publishedAt: -1 } : { publishedAt: -1 };
 	const [articles, total] = await Promise.all([
 		Article.find(query)

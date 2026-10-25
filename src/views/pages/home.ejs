@@ -6,6 +6,7 @@
       <label>חיפוש כתבות<input type="search" name="search" value="<%= filters.search %>" placeholder="חיפוש לפי כותרת"></label>
       <label>קטגוריה<input name="category" value="<%= filters.category %>" placeholder="כל הקטגוריות"></label>
       <label>מיון<select name="sort"><option value="">החדשות ביותר</option><option value="popular" <%= filters.sort === 'popular' ? 'selected' : '' %>>הנצפות ביותר</option></select></label>
+      <label>סטטוס קריאה<select name="watched"><option value="">הכל</option><option value="unread" <%= filters.watched === 'unread' ? 'selected' : '' %>>טרם נצפו</option><option value="read" <%= filters.watched === 'read' ? 'selected' : '' %>>כבר נצפו</option></select></label>
       <button type="submit">חיפוש</button><a href="/">איפוס</a>
     </form>
     <p class="meta" id="feed-total"><%= total %> כתבות נמצאו</p>
