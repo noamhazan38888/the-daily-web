@@ -7,7 +7,9 @@
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
-    "seed": "node src/seed.js"
+    "seed": "node src/seed.js",
+    "seed:presentation-users": "node src/seed-presentation-users.js",
+    "seed:presentation-articles": "node src/seed-presentation-articles.js"
   },
   "dependencies": {
     "@faker-js/faker": "^10.6.0",
