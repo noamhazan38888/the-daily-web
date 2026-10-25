@@ -29,6 +29,7 @@ export function createApp() {
   }));
   app.use(morgan('combined'));
   app.use(express.static(path.join(currentDirectory, 'public')));
+  app.use('/vendor/chart.js', express.static(path.join(currentDirectory, '..', 'node_modules', 'chart.js', 'dist', 'chart.umd.js')));
   app.use(express.urlencoded({ extended: false }));
   app.use(express.json());
   app.use(createSessionMiddleware());
